@@ -1,6 +1,5 @@
 ﻿using Discord;
 using Discord.Commands;
-using Discord.WebSocket;
 using Raven.Client.Documents;
 using Sparky.Models;
 using System;
@@ -39,7 +38,10 @@ namespace Sparky.Modules
         {
             var sb = new StringBuilder();
             for (int i = 0; i < users.Count; i++)
+            {
                 sb.AppendLine($"**{i + 1}.** <@{users[i].Id}> {selectFunc(users[i])}\n");
+            }
+
             eb.WithDescription(sb.ToString())
                 .WithColor(Color.DarkBlue)
                 .WithCurrentTimestamp();

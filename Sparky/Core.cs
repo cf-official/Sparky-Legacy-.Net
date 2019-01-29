@@ -44,7 +44,8 @@ namespace Sparky
             _client.MessageReceived += HandleMessageCreatedAsync;
             _client.UserJoined += HandleMemberJoinedAsync;
             _client.ReactionAdded += HandleReactionAddedAsync;
-            _client.Ready += async () => {
+            _client.Ready += async () =>
+            {
                 await _client.SetGameAsync("the fireworks", type: ActivityType.Watching);
                 _poller = new Poller(_client);
             };
@@ -78,7 +79,9 @@ namespace Sparky
         private async Task HandleMessageCreatedAsync(SocketMessage msg)
         {
             if (!(msg is SocketUserMessage message) || message.Author.IsBot)
+            {
                 return;
+            }
 
             using (var session = Database.Store.OpenAsyncSession())
             {
@@ -111,7 +114,9 @@ namespace Sparky
                 {
                     var role = member.Guild.Roles.FirstOrDefault(r => r.Id == roleId);
                     if (role != null)
+                    {
                         await member.AddRoleAsync(role);
+                    }
                 }
 
                 await session.SaveChangesAsync();
@@ -121,7 +126,9 @@ namespace Sparky
         private async Task HandleReactionAddedAsync(Cacheable<IUserMessage, ulong> cacheableMessage, IMessageChannel channel, SocketReaction reaction)
         {
             if (!(channel is SocketTextChannel guildChannel) || !reaction.Emote.Name.Equals(Configuration.Get<string>("karma_emote_name")))
+            {
                 return;
+            }
 
             using (var session = Database.Store.OpenAsyncSession())
             {
@@ -132,7 +139,9 @@ namespace Sparky
                 var isTimedOut = DateTimeOffset.UtcNow.Subtract(lastGivenAt).TotalMinutes >= Configuration.Get<int>("karma_limit_mins");
 
                 if (hasGivenKarma && !isTimedOut)
+                {
                     return;
+                }
                 else
                 {
                     user.Karma += 1;

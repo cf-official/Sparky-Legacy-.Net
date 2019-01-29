@@ -1,16 +1,13 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace Sparky
 {
     // TODO: This is absolutely not safe, will fix eventually.
     public static class Configuration
     {
-        private const string _path = "cfg/core.json";
+        private const string _path = "cfg/config.json";
 
         private static JObject _cache;
 

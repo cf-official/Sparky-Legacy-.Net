@@ -3,11 +3,11 @@ using System.Threading.Tasks;
 
 namespace Sparky
 {
-    class Program
+    internal class Program
     {
-        private static CancellationTokenSource _cts = new CancellationTokenSource();
+        private static readonly CancellationTokenSource _cts = new CancellationTokenSource();
 
-        static Task Main(string[] args)
+        private static Task Main(string[] args)
             => new Core(_cts).IgniteAsync();
     }
 }
