@@ -1,6 +1,7 @@
 ﻿using Discord.WebSocket;
 using Raven.Client.Documents;
 using Sparky.Models;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,8 +23,10 @@ namespace Sparky.Services
         private async Task PollGuildAsync(SocketGuild guild)
         {
             using (var session = Database.Store.OpenAsyncSession())
+            using (var roleSession = Database.Store.OpenAsyncSession())
             {
                 var users = await session.Query<SparkyUser>().ToListAsync();
+                var limits = await roleSession.Query<RoleLimit>().ToListAsync();
                 foreach (var member in guild.Users.Where(m => !m.IsBot))
                 {
                     var user = users.FirstOrDefault(u => u.Id == member.Id.ToString());
@@ -32,21 +35,20 @@ namespace Sparky.Services
                         user = SparkyUser.New(member.Id);
                         await session.StoreAsync(user);
                     }
-                    await DoRoleCheckAsync(member, user);
+                    await DoRoleCheckAsync(member, user, limits);
 
                     user.RoleIds = member.Roles.Select(r => r.Id).ToArray();
                 }
 
                 await session.SaveChangesAsync();
             }
-            _roleTimer = new Timer((_) => Task.Run(() => PollGuildAsync(_client.Guilds.First())), null, 10 * 1000, Timeout.Infinite);
+            _roleTimer = new Timer((_) => Task.Run(() => PollGuildAsync(_client.Guilds.First())), null, 30 * 1000, Timeout.Infinite);
         }
 
-        private async Task DoRoleCheckAsync(SocketGuildUser member, SparkyUser user)
+        private async Task DoRoleCheckAsync(SocketGuildUser member, SparkyUser user, List<RoleLimit> roleLimits)
         {
-            using (var session = Database.Store.OpenAsyncSession(database: "RoleLimits"))
+            using (var session = Database.Store.OpenAsyncSession())
             {
-                var roleLimits = await session.Query<RoleLimit>().ToListAsync();
                 foreach (var roleLimit in roleLimits)
                 {
                     var role = member.Guild.Roles.First(r => r.Id.ToString() == roleLimit.Id);

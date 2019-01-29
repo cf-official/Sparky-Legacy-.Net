@@ -9,15 +9,9 @@ namespace Sparky.Modules
     {
         protected IAsyncDocumentSession Session { get; private set; }
 
-        protected override async void BeforeExecute(CommandInfo command)
+        protected SparkyModuleBase()
         {
-            try
-            {
-                Session = Database.Store.OpenAsyncSession();
-            }
-            finally
-            {
-            }
+            Session = Database.Store.OpenAsyncSession();
         }
 
         protected override async void AfterExecute(CommandInfo command)

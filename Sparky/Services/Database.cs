@@ -15,12 +15,12 @@ namespace Sparky.Services
 
         private static IDocumentStore CreateStore()
         {
-            X509Certificate2 cert = (X509Certificate2)X509Certificate.CreateFromCertFile(Configuration.Get<string>("cert_path"));
+            var cert = new X509Certificate2(Configuration.Get<string>("cert_path"));
             return new DocumentStore()
             {
                 Urls = new[] { Configuration.Get<string>("database_url") },
                 Certificate = cert,
-                Database = "Sparky"
+                Database = "Core"
             }.Initialize();
         }
 

@@ -22,7 +22,7 @@ namespace Sparky
 
         private readonly CommandService _commands = new CommandService(new CommandServiceConfig
         {
-            LogLevel = LogSeverity.Info,
+            LogLevel = LogSeverity.Verbose,
             DefaultRunMode = RunMode.Async
         });
 
@@ -155,6 +155,7 @@ namespace Sparky
         private IServiceProvider ConfigureServices()
             => new ServiceCollection()
                 .AddSingleton(_client)
+                .AddSingleton(new InteractiveService(_client, TimeSpan.FromSeconds(30)))
                 .BuildServiceProvider();
     }
 }
