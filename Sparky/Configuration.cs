@@ -18,7 +18,7 @@ namespace Sparky
 
         public static void Write<TValue>(string key, TValue value)
         {
-            _cache.Add(key, JToken.Parse(JsonConvert.SerializeObject(value)));
+            _cache[key] = JToken.Parse(JsonConvert.SerializeObject(value));
             File.WriteAllText(_path, _cache.ToString());
         }
 

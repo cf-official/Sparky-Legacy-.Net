@@ -13,11 +13,13 @@ using System.Threading.Tasks;
 namespace Sparky.Modules
 {
     [Group("role")]
-    public sealed class RolesModule : SparkyModuleBase
+    [Alias("roles")]
+    [Summary("Role-related commands & functionality.")]
+    public sealed class Roles : SparkyModuleBase
     {
         public InteractiveService Interactive { get; }
 
-        public RolesModule(InteractiveService interactive) => Interactive = interactive;
+        public Roles(InteractiveService interactive) => Interactive = interactive;
 
         [Command]
         [Summary("View the requirements for existing auto-roles.")]
@@ -39,7 +41,7 @@ namespace Sparky.Modules
         [Command("setup")]
         [RequireUserPermission(GuildPermission.Administrator)]
         [Summary("Set up a role to be an auto-role, or edit an existing one.")]
-        public async Task SetupRoleAsync([Remainder] SocketRole role)
+        public async Task SetupRoleAsync([Remainder, Summary("@role")] SocketRole role)
         {
             await ReplyAsync("How many messages should it require?");
 

@@ -20,7 +20,7 @@ namespace Sparky.Services
             {
                 Urls = new[] { Configuration.Get<string>("database_url") },
                 Certificate = cert,
-                Database = "Core"
+                Database = Configuration.Get<string>("database_name")
             }.Initialize();
         }
 

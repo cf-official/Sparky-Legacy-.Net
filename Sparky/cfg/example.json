@@ -4,5 +4,6 @@
   "karma_limit_mins": 0,
   "karma_emote_name": "",
   "cert_path": "",
-  "database_url": ""
+  "database_url": "",
+  "database_name":  ""
 }

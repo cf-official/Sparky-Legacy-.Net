@@ -96,7 +96,7 @@ namespace Sparky
                 await session.SaveChangesAsync();
             }
             var argPos = 0;
-            if (message.HasStringPrefix("s.", ref argPos) || message.HasMentionPrefix(_client.CurrentUser, ref argPos))
+            if (message.HasStringPrefix(Configuration.Get<string>("prefix"), ref argPos) || message.HasMentionPrefix(_client.CurrentUser, ref argPos))
             {
                 var context = new SparkyCommandContext(_client, message);
 

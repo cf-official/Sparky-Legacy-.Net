@@ -7,13 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Discord.Net.Commands" Version="2.0.1" />
-    <PackageReference Include="Discord.Net.WebSocket" Version="2.0.1" />
-    <PackageReference Include="RavenDB.Client" Version="4.1.4-patch-41008" />
+    <Compile Remove="Extensions\**" />
+    <EmbeddedResource Remove="Extensions\**" />
+    <None Remove="Extensions\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Extensions\" />
+    <PackageReference Include="Discord.Net.Commands" Version="2.0.1" />
+    <PackageReference Include="Discord.Net.WebSocket" Version="2.0.1" />
+    <PackageReference Include="RavenDB.Client" Version="4.1.4-patch-41008" />
   </ItemGroup>
 
   <ItemGroup>
@@ -27,5 +29,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
+  <ProjectExtensions><VisualStudio><UserProperties cfg_4example_1json__JSONSchema="http://json.schemastore.org/config" /></VisualStudio></ProjectExtensions>
 
 </Project>

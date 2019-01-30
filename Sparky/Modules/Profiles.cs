@@ -9,10 +9,11 @@ using System.Threading.Tasks;
 namespace Sparky.Modules
 {
     [Group("profile")]
-    public sealed class ProfileModule : SparkyModuleBase
+    [Summary("Get information I've got stored on you.")]
+    public sealed class Profiles : SparkyModuleBase
     {
         [Command(RunMode = RunMode.Async)]
-        public async Task ViewProfileAsync(SocketGuildUser user = null)
+        public async Task ViewProfileAsync([Summary("@user")] SocketGuildUser user = null)
         {
             var users = await Session.Query<SparkyUser>().ToListAsync();
             var userData = users.First(u => u.Id == (user?.Id.ToString() ?? Context.User.Id.ToString()));

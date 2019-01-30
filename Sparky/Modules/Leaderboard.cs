@@ -12,9 +12,11 @@ namespace Sparky.Modules
 {
     [Group("leaderboard")]
     [Alias("lb")]
-    public sealed class LeaderboardModule : SparkyModuleBase
+    [Summary("Check how you stack up against other users on the server.")]
+    public sealed class Leaderboard : SparkyModuleBase
     {
         [Command("messages")]
+        [Summary("See the top 10 message senders in the server.")]
         public async Task GetMessageLeaderboardAsync()
         {
             var top10 = await Session.Query<SparkyUser>().OrderByDescending(u => u.MessageCount).Take(10).ToListAsync();
@@ -25,6 +27,7 @@ namespace Sparky.Modules
         }
 
         [Command("karma")]
+        [Summary("See the top 10 users by karma in the server.")]
         public async Task GetKarmaLeaderboardAsync()
         {
             var top10 = await Session.Query<SparkyUser>().OrderByDescending(u => u.Karma).Take(10).ToListAsync();

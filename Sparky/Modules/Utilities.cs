@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Sparky.Modules
 {
     [Summary("Provides commands useful in everyday use of the bot.")]
-    public sealed class UtilitiesModule : SparkyModuleBase
+    public sealed class Utilities : SparkyModuleBase
     {
         [Command("cleanup")]
         [Summary("Deletes messages that triggered a command, and all bot responses.")]
