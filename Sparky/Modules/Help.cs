@@ -70,6 +70,8 @@ namespace Sparky.Modules
             if (csb.Length > 0)
                 eb.AddField("Commands", csb.ToString());
 
+            eb.WithFooter("<> = required, [] = optional, ... = multiword");
+
             await ReplyAsync(embed: eb.Build());
         }
 

@@ -85,6 +85,7 @@ namespace Sparky.Modules
 
         [Command("new")]
         [RequireUserPermission(GuildPermission.ManageRoles)]
+        [RequireBotPermission(GuildPermission.ManageRoles)]
         [Summary("Creates a new, blank role.")]
         public async Task NewRoleAsync([Summary("#FFFFFF")] string hex, [Remainder, Summary("name")] string name)
         {
