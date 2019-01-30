@@ -1,6 +1,7 @@
 ﻿using Discord.WebSocket;
 using Raven.Client.Documents;
 using Sparky.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -16,7 +17,7 @@ namespace Sparky.Services
 
         public Poller(DiscordSocketClient client)
         {
-            _roleTimer = new Timer((_) => Task.Run(() => PollGuildAsync(_client.Guilds.First())), null, 10 * 1000, Timeout.Infinite);
+            _roleTimer = new Timer((_) => Task.Run(() => PollGuildAsync(_client.Guilds.First())), null, 0, Timeout.Infinite);
             _client = client;
         }
 
@@ -37,7 +38,9 @@ namespace Sparky.Services
                     }
                     await DoRoleCheckAsync(member, user, limits);
 
-                    user.RoleIds = member.Roles.Select(r => r.Id).ToArray();
+                    var memberRoles = member.Roles.Select(r => r.Id).ToArray();
+                    if (user.RoleIds != memberRoles)
+                        user.RoleIds = memberRoles;
                 }
 
                 await session.SaveChangesAsync();
@@ -47,19 +50,16 @@ namespace Sparky.Services
 
         private async Task DoRoleCheckAsync(SocketGuildUser member, SparkyUser user, List<RoleLimit> roleLimits)
         {
-            using (var session = Database.Store.OpenAsyncSession())
+            foreach (var roleLimit in roleLimits)
             {
-                foreach (var roleLimit in roleLimits)
+                var role = member.Guild.Roles.First(r => r.Id.ToString() == roleLimit.Id);
+                if (user.Karma >= roleLimit.KarmaCount && user.MessageCount >= roleLimit.MessageCount)
                 {
-                    var role = member.Guild.Roles.First(r => r.Id.ToString() == roleLimit.Id);
-                    if (user.Karma >= roleLimit.KarmaCount && user.MessageCount >= roleLimit.MessageCount)
-                    {
-                        await member.AddRoleAsync(role);
-                    }
-                    else if (member.Roles.Any(r => r.Id.ToString() == roleLimit.Id))
-                    {
-                        await member.RemoveRoleAsync(role);
-                    }
+                    await member.AddRoleAsync(role);
+                }
+                else if (member.Roles.Any(r => r.Id.ToString() == roleLimit.Id))
+                {
+                    await member.RemoveRoleAsync(role);
                 }
             }
         }

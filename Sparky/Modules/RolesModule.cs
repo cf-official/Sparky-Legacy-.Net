@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Raven.Client.Documents;
 using Sparky.Models;
 using Sparky.Services;
 using System;
@@ -18,8 +19,26 @@ namespace Sparky.Modules
 
         public RolesModule(InteractiveService interactive) => Interactive = interactive;
 
+        [Command]
+        [Summary("View the requirements for existing auto-roles.")]
+        public async Task ViewRolesASync()
+        {
+            var roleInfos = await Session.Query<RoleLimit>().ToListAsync();
+            var sb = new StringBuilder();
+            foreach (var role in roleInfos)
+                sb.AppendLine($"<&@{role.Id}>\nMessages: {role.MessageCount}\nKarma: {role.KarmaCount}\n");
+
+            var eb = new EmbedBuilder()
+                .WithColor(Color.DarkBlue)
+                .WithTitle("Requirements for Auto-Roles")
+                .WithDescription(sb.ToString());
+
+            await ReplyAsync(embed: eb.Build());
+        }
+
         [Command("setup")]
         [RequireUserPermission(GuildPermission.Administrator)]
+        [Summary("Set up a role to be an auto-role, or edit an existing one.")]
         public async Task SetupRoleAsync([Remainder] SocketRole role)
         {
             await ReplyAsync("How many messages should it require?");
@@ -50,14 +69,26 @@ namespace Sparky.Modules
             await ReplyAsync("Done!");
         }
 
+        [Command("unregister")]
+        [Summary("Unregisters a role from being automatically assigned.")]
+        [RequireUserPermission(GuildPermission.ManageRoles)]
+        public async Task UnregisterRoleAsync([Remainder, Summary("@role")] SocketRole role)
+        {
+            Session.Delete(role.Id.ToString());
+
+            await OkAsync();
+        }
+
+
         [Command("new")]
         [RequireUserPermission(GuildPermission.ManageRoles)]
-        public async Task NewRoleAsync(string hex, [Remainder] string name)
+        [Summary("Creates a new, blank role.")]
+        public async Task NewRoleAsync([Summary("#FFFFFF")] string hex, [Remainder, Summary("name")] string name)
         {
-            if (uint.TryParse(hex.Replace("0x", string.Empty), NumberStyles.HexNumber, CultureInfo.CurrentCulture, out var colorInt))
+            if (uint.TryParse(hex.Replace("#", string.Empty), NumberStyles.HexNumber, CultureInfo.CurrentCulture, out var colorInt))
             {
                 await Context.Guild.CreateRoleAsync(name, GuildPermissions.None, new Color(colorInt), true);
-                await Context.Message.AddReactionAsync(new Emoji("👌"));
+                await OkAsync();
             }
             else
                 await ReplyAsync("Pick a proper color, dude.");

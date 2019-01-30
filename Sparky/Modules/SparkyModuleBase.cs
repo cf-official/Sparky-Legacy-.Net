@@ -1,7 +1,9 @@
-﻿using Discord.Commands;
+﻿using Discord;
+using Discord.Commands;
 using Raven.Client.Documents.Session;
 using Sparky.Models;
 using Sparky.Services;
+using System.Threading.Tasks;
 
 namespace Sparky.Modules
 {
@@ -13,6 +15,8 @@ namespace Sparky.Modules
         {
             Session = Database.Store.OpenAsyncSession();
         }
+
+        protected Task OkAsync() => Context.Message.AddReactionAsync(new Emoji("👌"));
 
         protected override async void AfterExecute(CommandInfo command)
         {
