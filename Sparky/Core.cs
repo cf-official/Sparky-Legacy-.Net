@@ -130,10 +130,12 @@ namespace Sparky
                 return;
             }
 
+            var message = await cacheableMessage.DownloadAsync();
+            if (message.Author.Id == reaction.UserId)
+                return;
+
             using (var session = Database.Store.OpenAsyncSession())
             {
-                var message = await cacheableMessage.DownloadAsync();
-
                 var user = await Database.EnsureCreatedAsync(session, message.Author.Id);
                 var hasGivenKarma = user.KarmaGivers.TryGetValue(reaction.UserId, out var lastGivenAt);
                 var isTimedOut = DateTimeOffset.UtcNow.Subtract(lastGivenAt).TotalMinutes >= Configuration.Get<int>("karma_limit_mins");
