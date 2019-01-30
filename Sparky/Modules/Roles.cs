@@ -7,6 +7,7 @@ using Sparky.Services;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -27,7 +28,7 @@ namespace Sparky.Modules
         {
             var roleInfos = await Session.Query<RoleLimit>().ToListAsync();
             var sb = new StringBuilder();
-            foreach (var role in roleInfos)
+            foreach (var role in roleInfos.OrderByDescending(r => r.MessageCount * r.KarmaCount))
                 sb.AppendLine($"<@&{role.Id}>\nMessages: {role.MessageCount}\nKarma: {role.KarmaCount}\n");
 
             var eb = new EmbedBuilder()
