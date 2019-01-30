@@ -28,7 +28,7 @@ namespace Sparky.Modules
             var roleInfos = await Session.Query<RoleLimit>().ToListAsync();
             var sb = new StringBuilder();
             foreach (var role in roleInfos)
-                sb.AppendLine($"<&@{role.Id}>\nMessages: {role.MessageCount}\nKarma: {role.KarmaCount}\n");
+                sb.AppendLine($"<@&{role.Id}>\nMessages: {role.MessageCount}\nKarma: {role.KarmaCount}\n");
 
             var eb = new EmbedBuilder()
                 .WithColor(Color.DarkBlue)
