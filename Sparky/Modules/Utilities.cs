@@ -18,7 +18,7 @@ namespace Sparky.Modules
                 || m.Content.StartsWith(Context.Client.CurrentUser.Mention) 
                 || m.Author.Id == Context.Client.CurrentUser.Id);
 
-            await (Context.Channel as SocketTextChannel).DeleteMessagesAsync(messages);
+            await (Context.Channel as SocketTextChannel).DeleteMessagesAsync(messagesToDelete);
         }
 
         [Command("purge")]
