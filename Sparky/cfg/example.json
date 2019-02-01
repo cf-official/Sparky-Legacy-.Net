@@ -1,7 +1,8 @@
 {
   "token": "",
   "prefix": "",
-  "karma_limit_mins": 0,
+  "karma_limit_all": 0,
+  "karma_limit_mutual":  0,
   "karma_emote_name": "",
   "cert_path": "",
   "database_url": "",

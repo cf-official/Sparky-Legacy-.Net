@@ -16,9 +16,13 @@ namespace Sparky
     {
         private Poller _poller;
 
+        private KarmaService _karma;
+
         private readonly IServiceProvider _services;
 
         private readonly CancellationTokenSource _cts;
+
+        private readonly SemaphoreSlim _colorLock = new SemaphoreSlim(1, 1);
 
         private readonly CommandService _commands = new CommandService(new CommandServiceConfig
         {
@@ -29,7 +33,7 @@ namespace Sparky
         private readonly DiscordSocketClient _client = new DiscordSocketClient(new DiscordSocketConfig
         {
             AlwaysDownloadUsers = true,
-            LogLevel = LogSeverity.Info
+            LogLevel = LogSeverity.Verbose
         });
 
         public Core(CancellationTokenSource cts)
@@ -41,24 +45,16 @@ namespace Sparky
 
         public async Task IgniteAsync()
         {
+            _karma = new KarmaService(_client);
             _client.MessageReceived += HandleMessageCreatedAsync;
             _client.UserJoined += HandleMemberJoinedAsync;
-            _client.ReactionAdded += HandleReactionAddedAsync;
             _client.Ready += async () =>
             {
                 await _client.SetGameAsync("the fireworks", type: ActivityType.Watching);
                 _poller = new Poller(_client);
             };
-            _client.Log += msg =>
-            {
-                Console.WriteLine(msg);
-                return Task.CompletedTask;
-            };
-            _commands.Log += msg =>
-            {
-                Console.WriteLine(msg);
-                return Task.CompletedTask;
-            };
+            _client.Log += LogAsync;
+            _commands.Log += LogAsync;
 
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
 
@@ -74,6 +70,41 @@ namespace Sparky
 
                     _client.Dispose();
                 });
+        }
+
+        private async Task LogAsync(LogMessage message)
+        {
+            try
+            {
+                await _colorLock.WaitAsync();
+                ConsoleColor color = ConsoleColor.White;
+                switch(message.Severity)
+                {
+                    case LogSeverity.Debug:
+                        color = ConsoleColor.Gray;
+                        break;
+                    case LogSeverity.Verbose:
+                        color = ConsoleColor.White;
+                        break;
+                    case LogSeverity.Info:
+                        color = ConsoleColor.Green;
+                        break;
+                    case LogSeverity.Warning:
+                        color = ConsoleColor.DarkYellow;
+                        break;
+                    case LogSeverity.Error:
+                    case LogSeverity.Critical:
+                        color = ConsoleColor.Red;
+                        break;
+                }
+                Console.ForegroundColor = color;
+
+                Console.WriteLine($"[{message.Severity.ToString().PadRight(7)}] {message.Source.PadRight(17)}@{DateTimeOffset.UtcNow.ToString("HH:mm:ss dd/mm")} {message.Message}{(message.Exception != null ? Environment.NewLine : "")}{message.Exception?.Message ?? ""}");
+            }
+            finally
+            {
+                _colorLock.Release();
+            }
         }
 
         private async Task HandleMessageCreatedAsync(SocketMessage msg)
@@ -117,37 +148,6 @@ namespace Sparky
                     {
                         await member.AddRoleAsync(role);
                     }
-                }
-
-                await session.SaveChangesAsync();
-            }
-        }
-
-        private async Task HandleReactionAddedAsync(Cacheable<IUserMessage, ulong> cacheableMessage, IMessageChannel channel, SocketReaction reaction)
-        {
-            if (!(channel is SocketTextChannel guildChannel) || !reaction.Emote.Name.Equals(Configuration.Get<string>("karma_emote_name")))
-            {
-                return;
-            }
-
-            var message = await cacheableMessage.DownloadAsync();
-            if (message.Author.Id == reaction.UserId)
-                return;
-
-            using (var session = Database.Store.OpenAsyncSession())
-            {
-                var user = await Database.EnsureCreatedAsync(session, message.Author.Id);
-                var hasGivenKarma = user.KarmaGivers.TryGetValue(reaction.UserId, out var lastGivenAt);
-                var isTimedOut = DateTimeOffset.UtcNow.Subtract(lastGivenAt).TotalMinutes >= Configuration.Get<int>("karma_limit_mins");
-
-                if (hasGivenKarma && !isTimedOut)
-                {
-                    return;
-                }
-                else
-                {
-                    user.Karma += 1;
-                    user.KarmaGivers[reaction.UserId] = DateTimeOffset.UtcNow;
                 }
 
                 await session.SaveChangesAsync();

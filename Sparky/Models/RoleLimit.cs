@@ -2,6 +2,9 @@
 {
     public sealed class RoleLimit
     {
+        private RoleLimit()
+        {
+        }
         public string Id { get; set; }
 
         public int MessageCount { get; set; }

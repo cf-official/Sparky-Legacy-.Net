@@ -5,7 +5,7 @@ namespace Sparky.Models
 {
     public sealed class SparkyUser
     {
-        public SparkyUser()
+        private SparkyUser()
         {
         }
 
@@ -14,10 +14,6 @@ namespace Sparky.Models
         public int MessageCount { get; set; }
 
         public DateTimeOffset? LastMessageAt { get; set; }
-
-        public int Karma { get; set; }
-
-        public Dictionary<ulong, DateTimeOffset> KarmaGivers { get; set; }
 
         public ulong[] RoleIds { get; set; }
 
@@ -28,9 +24,7 @@ namespace Sparky.Models
                 Id = id.ToString(),
                 MessageCount = 0,
                 LastMessageAt = null,
-                RoleIds = new ulong[0],
-                Karma = 0,
-                KarmaGivers = new Dictionary<ulong, DateTimeOffset>()
+                RoleIds = new ulong[0]
             };
         }
     }
