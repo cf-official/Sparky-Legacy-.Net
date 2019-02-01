@@ -17,6 +17,7 @@ namespace Sparky.Modules
         public Help(CommandService commands) => _commands = commands;
 
         [Command]
+        [Summary("Get a list of all bot modules.")]
         public async Task HelpAsync()
         {
             var modules = _commands.Modules.Where(m => !m.IsSubmodule);
@@ -34,7 +35,8 @@ namespace Sparky.Modules
         }
 
         [Command]
-        public async Task HelpAsync([Remainder] string searchString)
+        [Summary("Get help for a specific module or command.")]
+        public async Task HelpAsync([Remainder, Summary("name")] string searchString)
         {
             var modules = _commands.Modules.Where(m => m.Name.Equals(searchString, StringComparison.OrdinalIgnoreCase) 
                 || m.Aliases.Any(a => a.Equals(searchString, StringComparison.OrdinalIgnoreCase)));
@@ -97,7 +99,7 @@ namespace Sparky.Modules
 
         private void AppendCommandHelp(StringBuilder sb, CommandInfo commandInfo)
         {
-            sb.AppendLine($"**{(commandInfo.Name.Contains("ASync") ? commandInfo.Aliases.First() : commandInfo.Name)}**");
+            sb.AppendLine($"**{(commandInfo.Name.Contains("Async") ? commandInfo.Aliases.First() : commandInfo.Name)}**");
             if (commandInfo.Aliases.Count() > 1)
                 sb.AppendLine($"Aliases: {string.Join(", ", commandInfo.Aliases.Where(a => !a.Equals(commandInfo.Name, StringComparison.OrdinalIgnoreCase)))}");
             sb.AppendLine($"Signature: {(commandInfo.Parameters.Count() > 0 ? string.Join(", ", commandInfo.Parameters.Select(p => FormatParameter(p))) : "none.")}");

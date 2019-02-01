@@ -24,7 +24,7 @@ namespace Sparky.Modules
 
         [Command]
         [Summary("View the requirements for existing auto-roles.")]
-        public async Task ViewRolesASync()
+        public async Task ViewRolesAsync()
         {
             var roleInfos = await Session.Query<RoleLimit>().ToListAsync();
             var sb = new StringBuilder();
