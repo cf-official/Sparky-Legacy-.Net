@@ -25,7 +25,7 @@ namespace Sparky.Modules
 
             var users = await Session.Query<SparkyUser>().ToListAsync();
             var events = await Session.Query<KarmaEvent>().ToListAsync();
-            var top5Karma = KarmaEvent.GetForAllUsers(events, users).Take(10);
+            var top5Karma = KarmaEvent.GetForAllUsers(events, users).Take(5);
 
             var eb = new EmbedBuilder()
                 .WithColor(Color.DarkBlue)
@@ -39,6 +39,7 @@ namespace Sparky.Modules
         }
 
         [Command("messages")]
+        [Alias("message", "msgs", "msg")]
         [Summary("See the top 10 message senders in the server.")]
         public async Task GetMessageLeaderboardAsync()
         {

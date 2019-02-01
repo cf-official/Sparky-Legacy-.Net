@@ -18,6 +18,9 @@ namespace Sparky.Modules
         [Summary("View your karma and message count.")]
         public async Task ViewProfileAsync([Summary("@user")] SocketGuildUser member = null)
         {
+            if (member?.IsBot ?? false)
+                return;
+
             var targetId = member?.Id ?? Context.User.Id;
             var users = await Session.Query<SparkyUser>().ToListAsync();
             var userData = users.First(u => u.Id == targetId.ToString());
@@ -35,7 +38,7 @@ namespace Sparky.Modules
             var messageRank = users.OrderByDescending(u => u.MessageCount).ToList().IndexOf(userData) + 1;
 
             var eb = new EmbedBuilder()
-                .WithTitle($"Profile of: {(member ?? Context.User as SocketGuildUser).Nickname ?? Context.User.Username}")
+                .WithTitle($"Profile of: {(member ?? Context.User as SocketGuildUser).Nickname ?? member?.Username ?? Context.User.Username}")
                 .AddField($"Karma (Rank {karmaRank})", karmaCount, true)
                 .AddField($"Message Count (Rank {messageRank})", userData.MessageCount, true)
                 .AddField("Top 5 Karma Givers", string.Join(", ", giverList.Count == 0 ? new[] { "None" } : giverList.Select(tuple => $"<@{tuple.Item1}> {(tuple.Item2/(double)karmaCount)*100}%")))
