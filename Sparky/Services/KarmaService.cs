@@ -82,7 +82,7 @@ namespace Sparky.Services
                 var karmaRanks = KarmaEvent.GetForAllUsers(events, users);
                 var userRank = karmaRanks.First(r => r.Item1 == userId.ToString());
 
-                return (karmaRanks.IndexOf(userRank), userRank.Item2);
+                return (karmaRanks.IndexOf(userRank) + 1, userRank.Item2);
             }
         }
 
