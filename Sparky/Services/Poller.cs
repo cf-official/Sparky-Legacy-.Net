@@ -53,11 +53,13 @@ namespace Sparky.Services
             foreach (var roleLimit in roleLimits)
             {
                 var role = member.Guild.Roles.First(r => r.Id.ToString() == roleLimit.Id);
-                if ((await KarmaService.GetKarmaAsync(member.Id)) >= roleLimit.KarmaCount && user.MessageCount >= roleLimit.MessageCount)
+                if ((await KarmaService.GetKarmaAsync(member.Id)) >= roleLimit.KarmaCount 
+                    && user.MessageCount >= roleLimit.MessageCount)
                 {
-                    await member.AddRoleAsync(role);
+                    if (!member.Roles.Contains(role))
+                        await member.AddRoleAsync(role);
                 }
-                else if (member.Roles.Any(r => r.Id.ToString() == roleLimit.Id))
+                else if (member.Roles.Contains(role))
                 {
                     await member.RemoveRoleAsync(role);
                 }
