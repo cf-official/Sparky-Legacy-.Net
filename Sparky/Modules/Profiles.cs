@@ -41,7 +41,7 @@ namespace Sparky.Modules
                 .WithTitle($"Profile of: {(member ?? Context.User as SocketGuildUser).Nickname ?? member?.Username ?? Context.User.Username}")
                 .AddField($"Karma (Rank {karmaRank})", karmaCount, true)
                 .AddField($"Message Count (Rank {messageRank})", userData.MessageCount, true)
-                .AddField("Top 5 Karma Givers", string.Join(", ", giverList.Count == 0 ? new[] { "None" } : giverList.Select(tuple => $"<@{tuple.Item1}> {(tuple.Item2/(double)karmaCount)*100}%")))
+                .AddField("Top 5 Karma Givers", string.Join(", ", giverList.Count == 0 ? new[] { "None" } : giverList.Select(tuple => $"<@{tuple.Item1}> {((tuple.Item2/(double)karmaCount)*100):.0}%")))
                 .WithColor(Color.DarkBlue)
                 .WithCurrentTimestamp()
                 .Build();
