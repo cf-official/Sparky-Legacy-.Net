@@ -23,7 +23,7 @@ namespace Sparky.Services
 
         private async Task HandleReactionAdded(Cacheable<IUserMessage, ulong> cacheable, ISocketMessageChannel channel, SocketReaction reaction)
         {
-            if (!VerifyIsKarmaEmote(reaction))
+            if (!VerifyIsKarmaEmote(reaction) || !VerifyIsKarmaChannel(reaction))
                 return;
             var message = await cacheable.GetOrDownloadAsync();
             if (message.Author.IsBot || message.Author.Id == reaction.UserId)
@@ -70,6 +70,8 @@ namespace Sparky.Services
         }
 
         private bool VerifyIsKarmaEmote(SocketReaction reaction) => reaction.Emote.Name.Equals(Configuration.Get<string>("karma_emote_name"));
+
+        private bool VerifyIsKarmaChannel(SocketReaction reaction) => Configuration.Get<ulong[]>("karma_channels").Any(id => id == reaction.Channel.Id);
 
         public static async Task<(int rank, int amount)> GetKarmaRankAsync(ulong userId)
         {
