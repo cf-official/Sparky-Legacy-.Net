@@ -1,4 +1,5 @@
-﻿using Discord.WebSocket;
+﻿using Discord;
+using Discord.WebSocket;
 using Raven.Client.Documents;
 using Sparky.Models;
 using System;
@@ -11,14 +12,35 @@ namespace Sparky.Services
 {
     public sealed class Poller
     {
+        private Core _botCore;
+
         private DiscordSocketClient _client;
 
-        private Timer _roleTimer;
+        private TimerCallback _callback;
 
-        public Poller(DiscordSocketClient client)
+        private readonly Timer _roleTimer;
+
+        public Poller(Core botCore, DiscordSocketClient client)
         {
-            _roleTimer = new Timer((_) => Task.Run(() => PollGuildAsync(_client.Guilds.First())), null, 0, Timeout.Infinite);
+            _botCore = botCore;
             _client = client;
+            _roleTimer = new Timer(_callback, null, 0, 30_000);
+            _callback = async _ =>
+            {
+                try
+                {
+                    await _botCore.LogAsync(new LogMessage(LogSeverity.Info, nameof(Poller), "Polling guild..."));
+                    await PollGuildAsync(_client.Guilds.First());
+                }
+                catch (Exception ex)
+                {
+                    await _botCore.LogAsync(new LogMessage(LogSeverity.Warning, nameof(Poller), "An exception was thrown while checking the guild.", ex));
+                }
+                finally
+                {
+                    await _botCore.LogAsync(new LogMessage(LogSeverity.Info, nameof(Poller), "Finished polling."));
+                }
+            };
         }
 
         private async Task PollGuildAsync(SocketGuild guild)
@@ -45,7 +67,6 @@ namespace Sparky.Services
 
                 await session.SaveChangesAsync();
             }
-            _roleTimer = new Timer((_) => Task.Run(() => PollGuildAsync(_client.Guilds.First())), null, 30 * 1000, Timeout.Infinite);
         }
 
         private async Task DoRoleCheckAsync(SocketGuildUser member, SparkyUser user, List<RoleLimit> roleLimits)
