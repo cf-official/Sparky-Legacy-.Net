@@ -22,17 +22,20 @@ namespace Sparky.Models
 
         public DateTimeOffset CreatedAt { get; set; }
 
-        public static KarmaEvent New(ulong giverId, IMessage message, int amount)
+        public static KarmaEvent New(ulong giverId, IMessage message, int amount) 
+            => New(giverId, message.Id, message.Author.Id, amount);
+
+        public static KarmaEvent New(ulong giverId, ulong messageId, ulong recipientId, int amount)
         {
             return new KarmaEvent
             {
-                Id = GetId(giverId, message.Id),
+                Id = GetId(giverId, messageId),
                 GiverId = giverId,
-                RecipientId = message.Author.Id,
+                RecipientId = recipientId,
                 Amount = amount,
                 CreatedAt = DateTimeOffset.UtcNow
             };
-        }
+    }
 
         public static string GetId(ulong giverId, ulong messageId) => $"{giverId}:{messageId}";
 

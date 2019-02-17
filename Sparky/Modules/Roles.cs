@@ -4,8 +4,6 @@ using Discord.WebSocket;
 using Raven.Client.Documents;
 using Sparky.Models;
 using Sparky.Services;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -72,8 +70,8 @@ namespace Sparky.Modules
             await ReplyAsync("Done!");
         }
 
-        [Command("unregister")]
-        [Summary("Unregisters a role from being automatically assigned.")]
+        [Command("remove")]
+        [Summary("removes a role from being automatically assigned.")]
         [RequireUserPermission(GuildPermission.ManageRoles)]
         public async Task UnregisterRoleAsync([Remainder, Summary("@role")] SocketRole role)
         {

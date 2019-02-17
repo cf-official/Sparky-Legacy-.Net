@@ -26,14 +26,14 @@ namespace Sparky
 
         private readonly CommandService _commands = new CommandService(new CommandServiceConfig
         {
-            LogLevel = LogSeverity.Verbose,
+            LogLevel = LogSeverity.Debug,
             DefaultRunMode = RunMode.Async
         });
 
         private readonly DiscordSocketClient _client = new DiscordSocketClient(new DiscordSocketConfig
-        {
-            AlwaysDownloadUsers = true,
-            LogLevel = LogSeverity.Verbose
+        {   
+            LogLevel = LogSeverity.Debug,
+            AlwaysDownloadUsers = true
         });
 
         public Core(CancellationTokenSource cts)
@@ -74,6 +74,8 @@ namespace Sparky
 
         public async Task LogAsync(LogMessage message)
         {
+            if (message.Severity > LogSeverity.Info)
+                return;
             try
             {
                 await _colorLock.WaitAsync();

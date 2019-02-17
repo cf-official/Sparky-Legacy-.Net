@@ -24,12 +24,11 @@ namespace Sparky.Services
         {
             _botCore = botCore;
             _client = client;
-            _roleTimer = new Timer(_callback, null, 0, 30_000);
             _callback = async _ =>
             {
                 try
                 {
-                    await _botCore.LogAsync(new LogMessage(LogSeverity.Info, nameof(Poller), "Polling guild..."));
+                    await _botCore.LogAsync(new LogMessage(LogSeverity.Verbose, nameof(Poller), "Polling guild..."));
                     await PollGuildAsync(_client.Guilds.First());
                 }
                 catch (Exception ex)
@@ -38,9 +37,10 @@ namespace Sparky.Services
                 }
                 finally
                 {
-                    await _botCore.LogAsync(new LogMessage(LogSeverity.Info, nameof(Poller), "Finished polling."));
+                    await _botCore.LogAsync(new LogMessage(LogSeverity.Verbose, nameof(Poller), "Finished polling."));
                 }
             };
+            _roleTimer = new Timer(_callback, null, 0, 30_000);
         }
 
         private async Task PollGuildAsync(SocketGuild guild)
@@ -78,10 +78,16 @@ namespace Sparky.Services
                     && user.MessageCount >= roleLimit.MessageCount)
                 {
                     if (!member.Roles.Contains(role))
+                    {
+                        await _botCore.LogAsync(new LogMessage(LogSeverity.Info, nameof(Poller), 
+                            $"{member.Username}#{member.Discriminator} fulfils requirement for {role.Name}, granting."));
                         await member.AddRoleAsync(role);
+                    }
                 }
                 else if (member.Roles.Contains(role))
                 {
+                    await _botCore.LogAsync(new LogMessage(LogSeverity.Info, nameof(Poller),
+                            $"{member.Username}#{member.Discriminator} no longer fulfils requirement for {role.Name}, removing."));
                     await member.RemoveRoleAsync(role);
                 }
             }

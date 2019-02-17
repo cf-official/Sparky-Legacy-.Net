@@ -16,7 +16,7 @@ namespace Sparky.Modules
     {
         [Command(RunMode = RunMode.Async)]
         [Summary("View your karma and message count.")]
-        public async Task ViewProfileAsync([Summary("@user")] SocketGuildUser member = null)
+        public async Task ViewProfileAsync([Summary("@user"), Remainder] SocketGuildUser member = null)
         {
             if (member?.IsBot ?? false)
                 return;
@@ -27,11 +27,22 @@ namespace Sparky.Modules
 
             (int karmaRank, int karmaCount) = await KarmaService.GetKarmaRankAsync(targetId);
 
+            int moderatedKarma = 0;
             var giverList = new List<(ulong, int)>();
             using (var giverSession = Database.Store.OpenAsyncSession())
             {
                 var giverEvents = await giverSession.Query<KarmaEvent>().Where(e => e.RecipientId == targetId).ToListAsync();
-                var giverGroups = giverEvents.GroupBy(e => e.GiverId).OrderByDescending(g => g.Sum(e => e.Amount)).Take(5);
+                var sparkyEvent = giverEvents.FirstOrDefault(e => e.Id == KarmaEvent.GetId(Context.Client.CurrentUser.Id, member?.Id ?? Context.User.Id));
+                if (sparkyEvent != null)
+                {
+                    giverEvents.Remove(sparkyEvent);
+                    moderatedKarma = sparkyEvent.Amount;
+                }
+                var giverGroups = giverEvents
+                    .GroupBy(e => e.GiverId)
+                    .OrderByDescending(g => g.Sum(e => e.Amount))
+                    .Take(5);
+
                 foreach (var giver in giverGroups)
                     giverList.Add((giver.Key, giver.Sum(e => e.Amount)));
             }
@@ -41,7 +52,8 @@ namespace Sparky.Modules
                 .WithTitle($"Profile of: {(member ?? Context.User as SocketGuildUser).Nickname ?? member?.Username ?? Context.User.Username}")
                 .AddField($"Karma (Rank {karmaRank})", karmaCount, true)
                 .AddField($"Message Count (Rank {messageRank})", userData.MessageCount, true)
-                .AddField("Top 5 Karma Givers", string.Join(", ", giverList.Count == 0 ? new[] { "None" } : giverList.Select(tuple => $"<@{tuple.Item1}> {((tuple.Item2/(double)karmaCount)*100):.0}%")))
+                .AddField("Top 5 Karma Givers", string.Join(", ", giverList.Count == 0 ? new[] { "None" } : giverList.Select(tuple => $"<@{tuple.Item1}> {((tuple.Item2 / (double)karmaCount) * 100):.0}%")))
+                .AddField("Moderated Karma", moderatedKarma.ToString(), true)
                 .WithColor(Color.DarkBlue)
                 .WithCurrentTimestamp()
                 .Build();
