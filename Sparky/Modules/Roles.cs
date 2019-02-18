@@ -25,14 +25,25 @@ namespace Sparky.Modules
         public async Task ViewRolesAsync()
         {
             var roleInfos = await Session.Query<RoleLimit>().ToListAsync();
-            var sb = new StringBuilder();
-            foreach (var role in roleInfos.OrderByDescending(r => r.MessageCount * r.KarmaCount))
-                sb.AppendLine($"<@&{role.Id}>\nMessages: {role.MessageCount}\nKarma: {role.KarmaCount}\n");
+            var groupedRoles = roleInfos.GroupBy(r => r.MessageCount > 0);
+            var messageRoles = groupedRoles.FirstOrDefault(g => g.Key);
+            var karmaRoles = groupedRoles.FirstOrDefault(g => !g.Key);
+
+            var msgSb = new StringBuilder();
+            if (messageRoles != null)
+                foreach (var role in messageRoles.OrderByDescending(r => r.MessageCount))
+                    msgSb.AppendLine($"<@&{role.Id}>\nMessages: {role.MessageCount}\n");
+
+            var karmaSb = new StringBuilder();
+            if (karmaRoles != null)
+                foreach (var role in karmaRoles.OrderByDescending(r => r.KarmaCount))
+                    karmaSb.AppendLine($"<@&{role.Id}>\nKarma: {role.KarmaCount}\n");
 
             var eb = new EmbedBuilder()
                 .WithColor(Color.DarkBlue)
                 .WithTitle("Requirements for Auto-Roles")
-                .WithDescription(sb.ToString());
+                .AddField("Messages", msgSb.ToString(), true)
+                .AddField("Karma", karmaSb.ToString(), true);
 
             await ReplyAsync(embed: eb.Build());
         }
