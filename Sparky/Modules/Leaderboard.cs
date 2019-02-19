@@ -35,7 +35,7 @@ namespace Sparky.Modules
             BuildLeaderboardEmbed(eb, "Karma Leaderboard", top5Karma.ToList());
 
             var response = await ReplyAsync(embed: eb.Build());
-            await WaitAndDeleteAsync(response);
+            //await WaitAndDeleteAsync(response);
         }
 
         [Command("messages")]
@@ -65,7 +65,7 @@ namespace Sparky.Modules
             var ranks = KarmaEvent.GetForAllUsers(events, users).Take(10);
 
             var response = await ReplyAsync(embed: BuildLeaderboardEmbed(eb, "Karma Leaderboard", ranks.ToList()).Build());
-            await WaitAndDeleteAsync(response);
+            //await WaitAndDeleteAsync(response);
         }
 
         private async Task WaitAndDeleteAsync(IMessage response)

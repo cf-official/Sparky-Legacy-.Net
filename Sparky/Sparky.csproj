@@ -19,6 +19,9 @@
     <None Update="cfg\sparky.pfx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="cfg\_sparky.pfx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ProjectExtensions><VisualStudio><UserProperties cfg_4example_1json__JSONSchema="http://json.schemastore.org/config" /></VisualStudio></ProjectExtensions>

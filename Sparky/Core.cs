@@ -26,14 +26,14 @@ namespace Sparky
 
         private readonly CommandService _commands = new CommandService(new CommandServiceConfig
         {
-            LogLevel = LogSeverity.Verbose,
+            LogLevel = LogSeverity.Debug,
             DefaultRunMode = RunMode.Async
         });
 
         private readonly DiscordSocketClient _client = new DiscordSocketClient(new DiscordSocketConfig
-        {
-            AlwaysDownloadUsers = true,
-            LogLevel = LogSeverity.Verbose
+        {   
+            LogLevel = LogSeverity.Debug,
+            AlwaysDownloadUsers = true
         });
 
         public Core(CancellationTokenSource cts)
@@ -51,7 +51,7 @@ namespace Sparky
             _client.Ready += async () =>
             {
                 await _client.SetGameAsync("the fireworks", type: ActivityType.Watching);
-                _poller = new Poller(_client);
+                _poller = new Poller(this, _client);
             };
             _client.Log += LogAsync;
             _commands.Log += LogAsync;
@@ -72,8 +72,10 @@ namespace Sparky
                 });
         }
 
-        private async Task LogAsync(LogMessage message)
+        public async Task LogAsync(LogMessage message)
         {
+            if (message.Severity > LogSeverity.Info)
+                return;
             try
             {
                 await _colorLock.WaitAsync();

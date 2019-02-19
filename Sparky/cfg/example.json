@@ -4,7 +4,10 @@
   "karma_limit_all": 0,
   "karma_limit_mutual":  0,
   "karma_emote_name": "",
+  "karma_channels": [
+    0
+  ],
   "cert_path": "",
   "database_url": "",
-  "database_name":  ""
+  "database_name": ""
 }
