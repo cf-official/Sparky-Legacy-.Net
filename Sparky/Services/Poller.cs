@@ -16,11 +16,9 @@ namespace Sparky.Services
 
         private DiscordSocketClient _client;
 
+        private Timer _roleTimer;
+
         private TimerCallback _callback;
-
-        private readonly Timer _roleTimer;
-
-        private readonly SemaphoreSlim _pollLock = new SemaphoreSlim(1, 1);
 
         public Poller(Core botCore, DiscordSocketClient client)
         {
@@ -28,9 +26,7 @@ namespace Sparky.Services
             _client = client;
             _callback = async _ =>
             {
-                if (_pollLock.CurrentCount == 0)
-                    return;
-                await _pollLock.WaitAsync();
+                _roleTimer.Dispose();
                 try
                 {
                     await _botCore.LogAsync(new LogMessage(LogSeverity.Verbose, nameof(Poller), "Polling guild..."));
@@ -43,7 +39,7 @@ namespace Sparky.Services
                 finally
                 {
                     await _botCore.LogAsync(new LogMessage(LogSeverity.Verbose, nameof(Poller), "Finished polling."));
-                    _pollLock.Release();
+                    _roleTimer = new Timer(_callback, null, 0, 30_000);
                 }
             };
             _roleTimer = new Timer(_callback, null, 0, 30_000);
