@@ -16,55 +16,58 @@ namespace Sparky.Services
 
         private DiscordSocketClient _client;
 
-        private Timer _roleTimer;
-
-        private TimerCallback _callback;
+        private Task _timerTask;
 
         public Poller(Core botCore, DiscordSocketClient client)
         {
             _botCore = botCore;
             _client = client;
-            _callback = async _ =>
-            {
-                _roleTimer.Dispose();
-                try
+            _timerTask = Task.Run(async () => {
+                while(true)
                 {
-                    await _botCore.LogAsync(new LogMessage(LogSeverity.Verbose, nameof(Poller), "Polling guild..."));
-                    await PollGuildAsync(_client.Guilds.First());
+                    await Task.Delay(45_000);
+
+                    try
+                    {
+                        await _botCore.LogAsync(new LogMessage(LogSeverity.Verbose, nameof(Poller), "Polling guild..."));
+                        await PollGuildAsync(_client.Guilds.First());
+                    }
+                    catch (Exception ex)
+                    {
+                        await _botCore.LogAsync(new LogMessage(LogSeverity.Warning, nameof(Poller), "An exception was thrown while checking the guild.", ex));
+                    }
+                    finally
+                    {
+                        await _botCore.LogAsync(new LogMessage(LogSeverity.Verbose, nameof(Poller), "Finished polling."));
+                    }
+
+                    await Task.Yield();
                 }
-                catch (Exception ex)
-                {
-                    await _botCore.LogAsync(new LogMessage(LogSeverity.Warning, nameof(Poller), "An exception was thrown while checking the guild.", ex));
-                }
-                finally
-                {
-                    await _botCore.LogAsync(new LogMessage(LogSeverity.Verbose, nameof(Poller), "Finished polling."));
-                    _roleTimer = new Timer(_callback, null, 0, 30_000);
-                }
-            };
-            _roleTimer = new Timer(_callback, null, 0, 30_000);
+            });
         }
 
         private async Task PollGuildAsync(SocketGuild guild)
         {
             using (var session = Database.Store.OpenAsyncSession())
-            using (var roleSession = Database.Store.OpenAsyncSession())
+            //using (var roleSession = Database.Store.OpenAsyncSession())
             {
                 var users = await session.Query<SparkyUser>().ToListAsync();
-                var limits = await roleSession.Query<RoleLimit>().ToListAsync();
+                var limits = await session.Query<RoleLimit>().ToListAsync();
                 foreach (var member in guild.Users.Where(m => !m.IsBot))
                 {
-                    var user = users.FirstOrDefault(u => u.Id == member.Id.ToString());
-                    if (user is null)
-                    {
+                    var user = await session.LoadAsync<SparkyUser>(member.Id.ToString());
+                    //var user = users.FirstOrDefault(u => u.Id == member.Id.ToString());
+                    var isNew = user == null;
+                    if (isNew)
                         user = SparkyUser.New(member.Id);
-                        await session.StoreAsync(user);
-                    }
+
                     await DoRoleCheckAsync(member, user, limits);
 
                     var memberRoles = member.Roles.Select(r => r.Id).ToArray();
-                    if (user.RoleIds != memberRoles)
-                        user.RoleIds = memberRoles;
+                    user.RoleIds = memberRoles;
+
+                    if (isNew)
+                        await session.StoreAsync(user);
                 }
 
                 await session.SaveChangesAsync();

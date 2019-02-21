@@ -74,7 +74,7 @@ namespace Sparky
 
         public async Task LogAsync(LogMessage message)
         {
-            if (message.Severity > LogSeverity.Info)
+            if (message.Severity > LogSeverity.Verbose)
                 return;
             try
             {
