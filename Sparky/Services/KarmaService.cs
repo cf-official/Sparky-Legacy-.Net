@@ -1,11 +1,8 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using Raven.Client.Documents;
-using Sparky.Models;
+using Sparky.Database;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Sparky.Services
@@ -29,10 +26,10 @@ namespace Sparky.Services
             if (message.Author.IsBot || message.Author.Id == reaction.UserId)
                 return;
 
-            using (var session = Database.Store.OpenAsyncSession())
+            using (var dctx = new SparkyContext())
             {
-                var relevantEvents = await session.Query<KarmaEvent>()
-                    .Where(k => k.RecipientId == message.Author.Id || k.GiverId == reaction.UserId).ToListAsync();
+                var relevantEvents = dctx.KarmaEvents
+                    .Where(k => k.RecipientId == Convert.ToInt64(message.Author.Id) || k.GiverId == Convert.ToInt64(reaction.UserId)).ToList();
 
                 // Check if the giver has already given on this message
                 var eventOnMessage = relevantEvents.FirstOrDefault(e => e.Id == KarmaEvent.GetId(reaction.UserId, message.Id));
@@ -40,19 +37,20 @@ namespace Sparky.Services
                     return;
 
                 // Check if the giver is allowed to give in general
-                var lastGiverEvent = relevantEvents.Where(e => e.GiverId == reaction.UserId).OrderByDescending(e => e.CreatedAt).FirstOrDefault();
-                if (DateTimeOffset.UtcNow.Subtract(lastGiverEvent?.CreatedAt ?? DateTimeOffset.MinValue).TotalMinutes < Configuration.Get<int>("karma_limit_all"))
+                var lastGiverEvent = relevantEvents.Where(e => e.GiverId == Convert.ToInt64(reaction.UserId)).OrderByDescending(e => e.GivenAt).FirstOrDefault();
+                if (DateTimeOffset.UtcNow.Subtract(lastGiverEvent?.GivenAt ?? DateTime.MinValue).TotalMinutes < Configuration.Get<int>("karma_limit_all"))
                     return;
 
                 // Check if the giver has given to recipient witin limit
-                var lastGiverToRecipient = relevantEvents.Where(e => e.GiverId == reaction.UserId && e.RecipientId == message.Author.Id).OrderByDescending(e => e.CreatedAt).FirstOrDefault();
-                if (DateTimeOffset.UtcNow.Subtract(lastGiverToRecipient?.CreatedAt ?? DateTimeOffset.MinValue).TotalMinutes < Configuration.Get<int>("karma_limit_mutual"))
+                var lastGiverToRecipient = relevantEvents.Where(e => e.GiverId == Convert.ToInt64(reaction.UserId) && e.RecipientId == Convert.ToInt64(message.Author.Id))
+                    .OrderByDescending(e => e.GivenAt).FirstOrDefault();
+                if (DateTimeOffset.UtcNow.Subtract(lastGiverToRecipient?.GivenAt ?? DateTime.MinValue).TotalMinutes < Configuration.Get<int>("karma_limit_mutual"))
                     return;
 
                 // Write new event to db
-                await session.StoreAsync(KarmaEvent.New(reaction.UserId, message, 1));
+                dctx.Add(KarmaEvent.New(reaction.UserId, message, 1));
 
-                await session.SaveChangesAsync();
+                await dctx.SaveChangesAsync();
             }
         }
 
@@ -61,11 +59,11 @@ namespace Sparky.Services
             if (!VerifyIsKarmaEmote(reaction))
                 return Task.CompletedTask;
 
-            using (var session = Database.Store.OpenAsyncSession())
+            using (var dctx = new SparkyContext())
             {
-                session.Delete(KarmaEvent.GetId(reaction.UserId, cacheable.Id));
+                dctx.Remove(KarmaEvent.GetId(reaction.UserId, cacheable.Id));
 
-                return session.SaveChangesAsync();
+                return dctx.SaveChangesAsync();
             }
         }
 
@@ -73,26 +71,22 @@ namespace Sparky.Services
 
         private bool VerifyIsKarmaChannel(SocketReaction reaction) => Configuration.Get<ulong[]>("karma_channels").Any(id => id == reaction.Channel.Id);
 
-        public static async Task<(int rank, int amount)> GetKarmaRankAsync(ulong userId)
+        public static (int rank, int amount) GetKarmaRank(ulong userId)
         {
-            using (var userSession = Database.Store.OpenAsyncSession())
-            using (var karmaSession = Database.Store.OpenAsyncSession())
+            using (var dctx = new SparkyContext())
             {
-                var users = await userSession.Query<SparkyUser>().ToListAsync();
-                var events = await userSession.Query<KarmaEvent>().ToListAsync();
-
-                var karmaRanks = KarmaEvent.GetForAllUsers(events, users);
-                var userRank = karmaRanks.First(r => r.Item1 == userId.ToString());
+                var karmaRanks = KarmaEvent.GetForAllUsers(dctx.KarmaEvents.ToList(), dctx.Users.ToList());
+                var userRank = karmaRanks.First(r => r.Item1 == userId);
 
                 return (karmaRanks.IndexOf(userRank) + 1, userRank.Item2);
             }
         }
 
-        public static async Task<int> GetKarmaAsync(ulong userId)
+        public static int GetKarma(ulong userId)
         {
-            using (var karmaSession = Database.Store.OpenAsyncSession())
+            using (var dctx = new SparkyContext())
             {
-                var userKarma = await karmaSession.Query<KarmaEvent>().Where(e => e.RecipientId == userId).ToListAsync();
+                var userKarma = dctx.KarmaEvents.Where(e => e.RecipientId == Convert.ToInt64(userId));
 
                 return userKarma.Sum(e => e.Amount);
             }

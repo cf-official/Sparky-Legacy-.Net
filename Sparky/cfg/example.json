@@ -7,7 +7,6 @@
   "karma_channels": [
     0
   ],
-  "cert_path": "",
-  "database_url": "",
-  "database_name": ""
+  "conn_string": "",
+  "poll_interval":  0
 }

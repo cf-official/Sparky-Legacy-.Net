@@ -1,9 +1,9 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using Raven.Client.Documents;
-using Sparky.Models;
+using Sparky.Database;
 using Sparky.Services;
+using System;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -24,20 +24,25 @@ namespace Sparky.Modules
         [Summary("View the requirements for existing auto-roles.")]
         public async Task ViewRolesAsync()
         {
-            var roleInfos = await Session.Query<RoleLimit>().ToListAsync();
-            var groupedRoles = roleInfos.GroupBy(r => r.MessageCount > 0);
+            var groupedRoles = DbCtx.RoleLimits.GroupBy(r => r.PointRequirement > 0);
+            if (groupedRoles.Count() < 2)
+            {
+                await ErrorAsync();
+                return;
+            }
+
             var messageRoles = groupedRoles.FirstOrDefault(g => g.Key);
             var karmaRoles = groupedRoles.FirstOrDefault(g => !g.Key);
 
             var msgSb = new StringBuilder();
             if (messageRoles != null)
-                foreach (var role in messageRoles.OrderByDescending(r => r.MessageCount))
-                    msgSb.AppendLine($"<@&{role.Id}>\nMessages: {role.MessageCount}\n");
+                foreach (var role in messageRoles.OrderByDescending(r => r.PointRequirement))
+                    msgSb.AppendLine($"<@&{role.Id}>\nPoints: {role.PointRequirement}\n");
 
             var karmaSb = new StringBuilder();
             if (karmaRoles != null)
-                foreach (var role in karmaRoles.OrderByDescending(r => r.KarmaCount))
-                    karmaSb.AppendLine($"<@&{role.Id}>\nKarma: {role.KarmaCount}\n");
+                foreach (var role in karmaRoles.OrderByDescending(r => r.KarmaRequirement))
+                    karmaSb.AppendLine($"<@&{role.Id}>\nKarma: {role.KarmaRequirement}\n");
 
             var eb = new EmbedBuilder()
                 .WithColor(Color.DarkBlue)
@@ -53,7 +58,7 @@ namespace Sparky.Modules
         [Summary("Set up a role to be an auto-role, or edit an existing one.")]
         public async Task SetupRoleAsync([Remainder, Summary("@role")] SocketRole role)
         {
-            await ReplyAsync("How many messages should it require?");
+            await ReplyAsync("How many points should it require?");
 
             var response = await Interactive.WaitForMessageAsync(InteractiveService.SameUserAndChannel(Context.User, Context.Channel));
 
@@ -67,15 +72,15 @@ namespace Sparky.Modules
             if (!int.TryParse(response.Content, out int karmaCount))
                 await ReplyAsync("Sorry, that's not a valid number.");
 
-            var existingRole = await Session.LoadAsync<RoleLimit>(role.Id.ToString());
+            var existingRole = DbCtx.RoleLimits.Find(Convert.ToInt64(role.Id));
             if (existingRole == null)
             {
-                await Session.StoreAsync(RoleLimit.New(role.Id, messageCount, karmaCount));
+                DbCtx.RoleLimits.Add(RoleLimit.New(role.Id, messageCount, karmaCount));
             }
             else
             {
-                existingRole.MessageCount = messageCount;
-                existingRole.KarmaCount = karmaCount;
+                existingRole.PointRequirement = messageCount;
+                existingRole.KarmaRequirement = karmaCount;
             }
 
             await ReplyAsync("Done!");
@@ -86,11 +91,11 @@ namespace Sparky.Modules
         [RequireUserPermission(GuildPermission.ManageRoles)]
         public async Task UnregisterRoleAsync([Remainder, Summary("@role")] SocketRole role)
         {
-            Session.Delete(role.Id.ToString());
+            var limit = DbCtx.RoleLimits.Find(Convert.ToInt64(role.Id));
+            DbCtx.Remove(limit);
 
             await OkAsync();
         }
-
 
         [Command("new")]
         [RequireUserPermission(GuildPermission.ManageRoles)]
