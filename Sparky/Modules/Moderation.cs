@@ -3,7 +3,6 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Sparky.Database;
 using Sparky.Services;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Sparky.Modules

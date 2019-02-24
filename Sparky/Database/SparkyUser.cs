@@ -21,6 +21,12 @@ namespace Sparky.Database
 
         public string RawRoles { get; set; }
 
+        public int? ForumUid { get; set; }
+
+        public int ForumKarma { get; set; }
+
+        public string ForumVerificationCode { get; set; }
+
         [NotMapped]
         public ulong[] Roles
         {
