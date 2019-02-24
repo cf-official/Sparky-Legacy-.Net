@@ -1,7 +1,7 @@
 ﻿using Discord.Commands;
 using Discord.WebSocket;
 
-namespace Sparky.Models
+namespace Sparky.Modules
 {
     public sealed class SparkyCommandContext : SocketCommandContext
     {

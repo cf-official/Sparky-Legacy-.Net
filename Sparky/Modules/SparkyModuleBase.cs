@@ -1,32 +1,32 @@
 ﻿using Discord;
 using Discord.Commands;
-using Raven.Client.Documents.Session;
-using Sparky.Models;
-using Sparky.Services;
+using Sparky.Database;
 using System.Threading.Tasks;
 
 namespace Sparky.Modules
 {
     public abstract class SparkyModuleBase : ModuleBase<SparkyCommandContext>
     {
-        protected IAsyncDocumentSession Session { get; private set; }
+        protected SparkyContext DbCtx { get; private set; }
 
         protected SparkyModuleBase()
         {
-            Session = Database.Store.OpenAsyncSession();
+            DbCtx = new SparkyContext();
         }
 
         protected Task OkAsync() => Context.Message.AddReactionAsync(new Emoji("👌"));
+
+        protected Task ErrorAsync() => Context.Message.AddReactionAsync(new Emoji("❌"));
 
         protected override async void AfterExecute(CommandInfo command)
         {
             try
             {
-                await Session.SaveChangesAsync();
+                await DbCtx.SaveChangesAsync();
             }
             finally
             {
-                Session.Dispose();
+                DbCtx.Dispose();
             }
         }
     }

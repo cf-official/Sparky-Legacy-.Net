@@ -1,11 +1,9 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using Raven.Client.Documents;
-using Sparky.Models;
+using Sparky.Database;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Sparky.Services
@@ -25,7 +23,7 @@ namespace Sparky.Services
             _timerTask = Task.Run(async () => {
                 while(true)
                 {
-                    await Task.Delay(45_000);
+                    await Task.Delay(Configuration.Get<int>("poll_interval"));
 
                     try
                     {
@@ -48,29 +46,26 @@ namespace Sparky.Services
 
         private async Task PollGuildAsync(SocketGuild guild)
         {
-            using (var session = Database.Store.OpenAsyncSession())
-            //using (var roleSession = Database.Store.OpenAsyncSession())
+            using (var dctx = new SparkyContext())
             {
-                var users = await session.Query<SparkyUser>().ToListAsync();
-                var limits = await session.Query<RoleLimit>().ToListAsync();
+                var limits = dctx.RoleLimits.ToList();
                 foreach (var member in guild.Users.Where(m => !m.IsBot))
                 {
-                    var user = await session.LoadAsync<SparkyUser>(member.Id.ToString());
-                    //var user = users.FirstOrDefault(u => u.Id == member.Id.ToString());
+                    var user = await dctx.FindAsync<SparkyUser>(Convert.ToInt64(member.Id));
                     var isNew = user == null;
                     if (isNew)
-                        user = SparkyUser.New(member.Id);
+                        user = new SparkyUser { Id = Convert.ToInt64(member.Id) };
 
                     await DoRoleCheckAsync(member, user, limits);
 
                     var memberRoles = member.Roles.Select(r => r.Id).ToArray();
-                    user.RoleIds = memberRoles;
+                    user.Roles = memberRoles;
 
                     if (isNew)
-                        await session.StoreAsync(user);
+                        await dctx.AddAsync(user);
                 }
 
-                await session.SaveChangesAsync();
+                await dctx.SaveChangesAsync();
             }
         }
 
@@ -78,9 +73,9 @@ namespace Sparky.Services
         {
             foreach (var roleLimit in roleLimits)
             {
-                var role = member.Guild.Roles.First(r => r.Id.ToString() == roleLimit.Id);
-                if ((await KarmaService.GetKarmaAsync(member.Id)) >= roleLimit.KarmaCount 
-                    && user.MessageCount >= roleLimit.MessageCount)
+                var role = member.Guild.Roles.First(r => Convert.ToInt64(r.Id) == roleLimit.Id);
+                if (KarmaService.GetKarma(member.Id) >= roleLimit.KarmaRequirement 
+                    && user.Points >= roleLimit.PointRequirement)
                 {
                     if (!member.Roles.Contains(role))
                     {

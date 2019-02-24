@@ -2,7 +2,8 @@
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
-using Sparky.Models;
+using Sparky.Database;
+using Sparky.Modules;
 using Sparky.Services;
 using System;
 using System.Linq;
@@ -116,17 +117,17 @@ namespace Sparky
                 return;
             }
 
-            using (var session = Database.Store.OpenAsyncSession())
+            using (var dctx = new SparkyContext())
             {
-                var user = await Database.EnsureCreatedAsync(session, message.Author.Id);
+                var user = dctx.GetOrCreateUser(msg.Author.Id);
 
-                if (DateTimeOffset.UtcNow.Subtract(user.LastMessageAt ?? DateTimeOffset.UtcNow.AddMinutes(-2)).TotalMinutes >= 1)
+                if (DateTime.UtcNow.Subtract(user.LastMessageAt ?? DateTime.UtcNow.AddMinutes(-2)).TotalMinutes >= 1)
                 {
-                    user.MessageCount += 1;
-                    user.LastMessageAt = DateTimeOffset.UtcNow;
+                    user.Points += 1;
+                    user.LastMessageAt = DateTime.UtcNow;
                 }
 
-                await session.SaveChangesAsync();
+                await dctx.SaveChangesAsync();
             }
             var argPos = 0;
             if (message.HasStringPrefix(Configuration.Get<string>("prefix"), ref argPos) || message.HasMentionPrefix(_client.CurrentUser, ref argPos))
@@ -139,11 +140,11 @@ namespace Sparky
 
         private async Task HandleMemberJoinedAsync(SocketGuildUser member)
         {
-            using (var session = Database.Store.OpenAsyncSession())
+            using (var dctx = new SparkyContext())
             {
-                var user = await Database.EnsureCreatedAsync(session, member.Id);
+                var user = dctx.GetOrCreateUser(member.Id);
 
-                foreach (var roleId in user.RoleIds)
+                foreach (var roleId in user.Roles)
                 {
                     var role = member.Guild.Roles.FirstOrDefault(r => r.Id == roleId);
                     if (role != null)
@@ -152,7 +153,7 @@ namespace Sparky
                     }
                 }
 
-                await session.SaveChangesAsync();
+                await dctx.SaveChangesAsync();
             }
         }
 

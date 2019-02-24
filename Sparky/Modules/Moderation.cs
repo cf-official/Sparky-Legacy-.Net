@@ -1,8 +1,7 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using Raven.Client.Documents;
-using Sparky.Models;
+using Sparky.Database;
 using Sparky.Services;
 using System.Linq;
 using System.Threading.Tasks;
@@ -22,14 +21,14 @@ namespace Sparky.Modules
                 await ReplyAsync("You can't edit the message count of bots.");
                 return;
             }
-            var user = await Session.LoadAsync<SparkyUser>(member.Id.ToString());
-            if (user.MessageCount - toAdd < 0)
+            var user = DbCtx.Users.Find(member.Id);
+            if (user.Points - toAdd < 0)
             {
                 await ReplyAsync("You can't give a user a negative message count.");
                 return;
             }
 
-            user.MessageCount += toAdd;
+            user.Points += toAdd;
             
             await OkAsync();
         }
@@ -43,15 +42,15 @@ namespace Sparky.Modules
                 await ReplyAsync("You can't edit bot karma.");
                 return;
             }
-            if ((await KarmaService.GetKarmaAsync(member.Id)) + toAdd < 0)
+            if ((KarmaService.GetKarma(member.Id)) + toAdd < 0)
             {
                 await ReplyAsync("You can't give a user negative karma.");
                 return;
             }
 
-            var sparkyEvent = await Session.LoadAsync<KarmaEvent>(KarmaEvent.GetId(Context.Client.CurrentUser.Id, member.Id));
+            var sparkyEvent = DbCtx.KarmaEvents.Find(KarmaEvent.GetId(Context.Client.CurrentUser.Id, member.Id));
             if (sparkyEvent == null)
-                await Session.StoreAsync(KarmaEvent.New(Context.Client.CurrentUser.Id, member.Id, member.Id, toAdd));
+                DbCtx.Add(KarmaEvent.New(Context.Client.CurrentUser.Id, member.Id, member.Id, toAdd));
             else
                 sparkyEvent.Amount += toAdd;
 
