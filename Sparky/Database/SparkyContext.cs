@@ -120,10 +120,6 @@ namespace Sparky.Database
                 entity.Property(e => e.ForumUid)
                     .HasColumnName("forum_uid");
 
-                entity.Property(e => e.ForumKarma)
-                    .HasColumnName("forum_karma")
-                    .HasDefaultValue(0);
-
                 entity.Property(e => e.ForumVerificationCode)
                     .HasColumnName("forum_verification_code")
                     .HasMaxLength(38)

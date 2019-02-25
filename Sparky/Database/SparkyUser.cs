@@ -23,8 +23,6 @@ namespace Sparky.Database
 
         public int? ForumUid { get; set; }
 
-        public int ForumKarma { get; set; }
-
         public string ForumVerificationCode { get; set; }
 
         [NotMapped]
