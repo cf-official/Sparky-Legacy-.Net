@@ -69,6 +69,7 @@ namespace Sparky.Modules
 
         [Command("eval")]
         [Alias("```cs", "```csharp")]
+        [RequireOwner]
         public async Task EvalAsync([Remainder] string code)
         {
             var codeMatch = GetCode(code);
