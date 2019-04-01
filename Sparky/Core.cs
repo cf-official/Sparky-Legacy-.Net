@@ -132,7 +132,7 @@ namespace Sparky
             var argPos = 0;
             if (message.HasStringPrefix(Configuration.Get<string>("prefix"), ref argPos) || message.HasMentionPrefix(_client.CurrentUser, ref argPos))
             {
-                var context = new SparkyCommandContext(_client, message);
+                var context = new SparkyCommandContext(_client, message, _services);
 
                 await _commands.ExecuteAsync(context, argPos, _services, MultiMatchHandling.Best);
             }
