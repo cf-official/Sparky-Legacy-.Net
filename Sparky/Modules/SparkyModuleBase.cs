@@ -14,9 +14,13 @@ namespace Sparky.Modules
             DbCtx = new SparkyContext();
         }
 
-        protected Task OkAsync() => Context.Message.AddReactionAsync(new Emoji("👌"));
+        protected static Emoji OkEmoji => new Emoji("👌");
 
-        protected Task ErrorAsync() => Context.Message.AddReactionAsync(new Emoji("❌"));
+        protected static Emoji ErrorEmoji => new Emoji("❌");
+
+        protected Task OkAsync() => Context.Message.AddReactionAsync(OkEmoji);
+
+        protected Task ErrorAsync() => Context.Message.AddReactionAsync(ErrorEmoji);
 
         protected override async void AfterExecute(CommandInfo command)
         {
