@@ -5,6 +5,7 @@ using Sparky.Database;
 using Sparky.Services;
 using System;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -82,18 +83,26 @@ namespace Sparky.Modules
 
         [Command("hackban")]
         [Summary("Ban a user by id.")]
-        public async Task BanUserAsync([Summary("123456789")] ulong id)
+        public async Task BanUserAsync([Summary("123456789")] params ulong[] userIds)
         {
-            try
-            {
-                await Context.Guild.AddBanAsync(id);
+            var sb = new StringBuilder()
+                .AppendLine("**Results:** ");
 
-                await ReplyAsync("👌");
-            }
-            catch
+            for (int i = 0; i < userIds.Length; i++)
             {
-                await ErrorAsync();
+                try
+                {
+                    await Context.Guild.AddBanAsync(userIds[i]);
+
+                    sb.AppendLine($"- {userIds[i]} 👌");
+                }
+                catch
+                {
+                    sb.AppendLine($"- {userIds[i]} ❌");
+                }
             }
+
+            await ReplyAsync(sb.ToString());
         }
 
         [Command("massban")]
