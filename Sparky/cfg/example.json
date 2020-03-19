@@ -1,12 +1,25 @@
 {
+  //Bot token, doy
   "token": "",
+
+  //Bot prefix, also doy
   "prefix": "",
+
+  //Cd in minutes between giving someone karma
   "karma_limit_all": 0,
-  "karma_limit_mutual":  0,
+
+  //Cd in minutes between giving someone karma who gave you karma..
+  "karma_limit_mutual": 0,
+
+  //Name of reaction emoji used to give karma
   "karma_emote_name": "",
+
+  // ? presumeably the channels where karma may be given. (This is what happens when authors don't comment their code)
   "karma_channels": [
     0
   ],
+
+  //"conn_string": "Host=my_host;Database=my_db;Username=my_user;Password=my_pw"
   "conn_string": "",
-  "poll_interval":  0
+  "poll_interval": 0
 }

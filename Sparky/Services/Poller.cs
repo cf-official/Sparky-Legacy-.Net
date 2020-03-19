@@ -27,7 +27,7 @@ namespace Sparky.Services
 
                     try
                     {
-                        await _botCore.LogAsync(new LogMessage(LogSeverity.Verbose, nameof(Poller), "Polling guild..."));
+                        await _botCore.LogAsync(new LogMessage(LogSeverity.Debug, nameof(Poller), "Polling guild..."));
                         await PollGuildAsync(_client.Guilds.First());
                     }
                     catch (Exception ex)
@@ -36,10 +36,8 @@ namespace Sparky.Services
                     }
                     finally
                     {
-                        await _botCore.LogAsync(new LogMessage(LogSeverity.Verbose, nameof(Poller), "Finished polling."));
+                        await _botCore.LogAsync(new LogMessage(LogSeverity.Debug, nameof(Poller), "Finished polling."));
                     }
-
-                    await Task.Yield();
                 }
             });
         }

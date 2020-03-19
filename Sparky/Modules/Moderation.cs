@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Sparky.Modules
@@ -16,6 +17,11 @@ namespace Sparky.Modules
     [Summary("All moderation-related commands.")]
     public sealed class Moderation : SparkyModuleBase
     {
+        private readonly InteractiveService _interactive;
+
+        public Moderation(InteractiveService interactive)
+            => _interactive = interactive;
+
         [Command("editmsg")]
         [Summary("Manually add to a user's message count (to remove, specify a negative amount).")]
         public async Task AddMessageCountAsync([Summary("@user")] SocketGuildUser member, [Summary("1")] int toAdd)
@@ -59,6 +65,126 @@ namespace Sparky.Modules
                 sparkyEvent.Amount += toAdd;
 
             await OkAsync();
+        }
+
+        [Command("ban")]
+        [Summary("Ban a user.")]
+        public async Task BanUserAsync([Summary("@user"), Remainder] SocketGuildUser member)
+        {
+            try
+            {
+                await member.BanAsync();
+
+                await ReplyAsync("👌");
+            }
+            catch
+            {
+                await ErrorAsync();
+            }
+        }
+
+        [Command("hackban")]
+        [Summary("Ban a user by id.")]
+        public async Task BanUserAsync([Summary("123456789")] params ulong[] userIds)
+        {
+            var sb = new StringBuilder()
+                .AppendLine("**Results:** ");
+
+            for (int i = 0; i < userIds.Length; i++)
+            {
+                try
+                {
+                    await Context.Guild.AddBanAsync(userIds[i]);
+
+                    sb.AppendLine($"- {userIds[i]} 👌");
+                }
+                catch
+                {
+                    sb.AppendLine($"- {userIds[i]} ❌");
+                }
+            }
+
+            await ReplyAsync(sb.ToString());
+        }
+
+        [Command("massban")]
+        [Summary("Mass ban all users that joined in the last n minutes.")]
+        public async Task MassBanUsersAsync(int minutes)
+        {
+            var now = DateTimeOffset.UtcNow;
+
+            var users = Context.Guild.Users
+                .Where(u => now.Subtract(u.JoinedAt ?? now).TotalMinutes <= minutes)
+                .ToList();
+
+            if (users.Count == 0)
+            {
+                await ReplyAsync("No users were found in that timeframe.");
+                return;
+            }
+
+            await ReplyAsync($"I found {users.Count} member(s) that joined in the last {minutes} minutes. \nWould you like me to ban them? (y/n)");
+
+            var message = await _interactive.WaitForMessageAsync(InteractiveService.SameUserAndChannel(Context.User, Context.Channel));
+
+            if (message.Content.Equals("y", StringComparison.OrdinalIgnoreCase))
+            {
+                int bans = 0;
+                foreach (var user in users)
+                {
+                    try
+                    {
+                        await user.BanAsync();
+
+                        bans++;
+                    }
+                    catch
+                    {
+                    }
+                }
+
+                await ReplyAsync($"👌 ({bans} bans)");
+            }
+        }
+
+        [Command("massban")]
+        [Summary("Ban all users that match a given regex.")]
+        public async Task MassBanUsersAsync([Remainder] string pattern)
+        {
+            var regex = new Regex(pattern);
+
+            var users = Context.Guild.Users
+                .Where(u => regex.IsMatch(u.Username))
+                .ToList();
+
+            if (users.Count == 0)
+            {
+                await ReplyAsync("No users were found in that timeframe.");
+                return;
+            }
+
+            await ReplyAsync($"I found {users.Count} member(s) that matched your regex. \nWould you like me to ban them? (y/n)");
+
+            var message = await _interactive.WaitForMessageAsync(InteractiveService.SameUserAndChannel(Context.User, Context.Channel));
+
+            if (message.Content.Equals("y", StringComparison.OrdinalIgnoreCase))
+            {
+                int bans = 0;
+                foreach (var user in users)
+                {
+                    try
+                    {
+                        await user.BanAsync();
+
+                        bans++;
+                    }
+                    catch
+                    {
+                    }
+                }
+
+                await ReplyAsync($"👌 ({bans} bans)");
+            }
         }
 
         [Command("prefix")]
