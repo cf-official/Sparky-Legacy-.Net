@@ -116,6 +116,14 @@ namespace Sparky.Database
                     .HasColumnName("roles")
                     .HasColumnType("jsonb")
                     .HasDefaultValueSql("'{}'::jsonb");
+
+                entity.Property(e => e.ForumUid)
+                    .HasColumnName("forum_uid");
+
+                entity.Property(e => e.ForumVerificationCode)
+                    .HasColumnName("forum_verification_code")
+                    .HasMaxLength(38)
+                    .ValueGeneratedNever();
             });
         }
     }
